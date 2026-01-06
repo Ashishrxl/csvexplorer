@@ -43,6 +43,25 @@ def play_sound(text, lang):
     )
     os.remove(f.name)
 
+# ---------- PLAY ALL SOUNDS ----------
+def play_all_sounds(items, lang):
+    text = " ".join(items)  # space gives natural pause between letters
+    tts = gTTS(text=text, lang=lang)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
+        tts.save(f.name)
+        audio = open(f.name, "rb").read()
+
+    encoded = base64.b64encode(audio).decode()
+    st.markdown(
+        f"""
+        <audio autoplay>
+            <source src="data:audio/mp3;base64,{encoded}">
+        </audio>
+        """,
+        unsafe_allow_html=True
+    )
+    os.remove(f.name)
+
 # ---------- RESPONSIVE COLUMN COUNT ----------
 def get_columns():
     width = st.session_state.get("width", 1200)
@@ -107,10 +126,19 @@ hindi_letters = [
 tab1, tab2, tab3 = st.tabs(["🔤 Alphabets", "🔢 Numbers", "🪔 Hindi Letters"])
 
 with tab1:
+    st.markdown("### 🔊 Listen to All Alphabets")
+    if st.button("▶️ Play All Alphabets", use_container_width=True):
+        play_all_sounds(english_letters, "en")
     letter_grid(english_letters, "en", "EN")
 
 with tab2:
+    st.markdown("### 🔊 Listen to All Numbers")
+    if st.button("▶️ Play All Numbers", use_container_width=True):
+        play_all_sounds(numbers, "en")
     letter_grid(numbers, "en", "NUM")
 
 with tab3:
+    st.markdown("### 🔊 Listen to All Hindi Letters")
+    if st.button("▶️ Play All Hindi Letters", use_container_width=True):
+        play_all_sounds(hindi_letters, "hi")
     letter_grid(hindi_letters, "hi", "HI")
