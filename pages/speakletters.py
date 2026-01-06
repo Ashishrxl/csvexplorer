@@ -1,8 +1,6 @@
 import streamlit as st
 from gtts import gTTS
 import tempfile
-import base64
-import os
 import random
 from num2words import num2words
 
@@ -25,23 +23,11 @@ st.markdown("<h1 style='text-align:center;color:#ff6f61;'>🎈 Touch the Letter 
 
 # ---------- PLAY SOUND ----------
 def play_sound(text, lang):
-    """Play a text immediately via gTTS"""
+    """Play TTS immediately using st.audio for full reliability."""
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         tts.save(f.name)
-        audio = open(f.name, "rb").read()
-
-    encoded = base64.b64encode(audio).decode()
-    rand = random.randint(1, 1_000_000)
-    st.markdown(
-        f"""
-        <audio autoplay>
-            <source src="data:audio/mp3;base64,{encoded}?v={rand}">
-        </audio>
-        """,
-        unsafe_allow_html=True
-    )
-    os.remove(f.name)
+        st.audio(f.name, format="audio/mp3")
 
 # ---------- PLAY ALL ----------
 def play_all_sounds(items, lang, number_words=False):
@@ -81,10 +67,7 @@ def letter_grid(items, lang, key_prefix, number_words=False):
                 unsafe_allow_html=True
             )
             if cols[c].button(letter, use_container_width=True, key=f"{key_prefix}{r}{c}"):
-                if number_words:
-                    spoken = num2words(int(letter))
-                else:
-                    spoken = letter
+                spoken = num2words(int(letter)) if number_words else letter
                 play_sound(spoken, lang)
 
 # ---------- DATA ----------
