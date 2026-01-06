@@ -4,11 +4,11 @@ import tempfile
 import base64
 import os
 import random
-from num2words import num2words  # <-- new import
+from num2words import num2words
 
 st.set_page_config(page_title="Kids Touch Letters", layout="wide")
 
-# ---------- CSS FOR COLORFUL BUTTONS ----------
+# ---------- CSS ----------
 st.markdown("""
 <style>
 button {
@@ -21,23 +21,11 @@ button {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown(
-    "<h1 style='text-align:center;color:#ff6f61;'>🎈 Touch the Letter 🎈</h1>",
-    unsafe_allow_html=True
-)
+st.markdown("<h1 style='text-align:center;color:#ff6f61;'>🎈 Touch the Letter 🎈</h1>", unsafe_allow_html=True)
 
-# ---------- LETTER QUEUE ----------
-if "letter_queue" not in st.session_state:
-    st.session_state.letter_queue = []
-
-# ---------- PLAY SOUND WITH QUEUE ----------
-def play_queued_letters(lang):
-    """Play all letters in the queue sequentially."""
-    if not st.session_state.letter_queue:
-        return
-    text = " ".join(st.session_state.letter_queue)
-    st.session_state.letter_queue = []  # clear queue immediately
-
+# ---------- PLAY SOUND ----------
+def play_sound(text, lang):
+    """Play a text immediately via gTTS"""
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         tts.save(f.name)
@@ -55,56 +43,29 @@ def play_queued_letters(lang):
     )
     os.remove(f.name)
 
-# ---------- PLAY ALL SOUNDS ----------
+# ---------- PLAY ALL ----------
 def play_all_sounds(items, lang, number_words=False):
-    """Play all items. If number_words=True, convert numbers to words."""
+    """Play all items continuously"""
     if number_words:
         text_items = [num2words(int(i)) for i in items]
     else:
         text_items = items
-
     text = " ".join(text_items)
-    tts = gTTS(text=text, lang=lang)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
-        tts.save(f.name)
-        audio = open(f.name, "rb").read()
-
-    encoded = base64.b64encode(audio).decode()
-    rand = random.randint(1, 1_000_000)
-    st.markdown(
-        f"""
-        <audio autoplay>
-            <source src="data:audio/mp3;base64,{encoded}?v={rand}">
-        </audio>
-        """,
-        unsafe_allow_html=True
-    )
-    os.remove(f.name)
-
-# ---------- RESPONSIVE COLUMN COUNT ----------
-def get_columns():
-    width = st.session_state.get("width", 1200)
-    if width < 500:
-        return 3
-    elif width < 800:
-        return 4
-    elif width < 1100:
-        return 6
-    else:
-        return 8
-
-# ---------- COLOR PALETTE ----------
-colors = [
-    "#ff6f61", "#f7b731", "#20bf6b", "#45aaf2",
-    "#a55eea", "#fd9644", "#2d98da", "#eb3b5a"
-]
+    play_sound(text, lang)
 
 # ---------- GRID ----------
+def get_columns():
+    width = st.session_state.get("width", 1200)
+    if width < 500: return 3
+    elif width < 800: return 4
+    elif width < 1100: return 6
+    else: return 8
+
+colors = ["#ff6f61","#f7b731","#20bf6b","#45aaf2","#a55eea","#fd9644","#2d98da","#eb3b5a"]
+
 def letter_grid(items, lang, key_prefix, number_words=False):
-    """Render a grid of letters/numbers. number_words=True converts numbers to words for TTS."""
     cols_count = get_columns()
     rows = [items[i:i+cols_count] for i in range(0, len(items), cols_count)]
-
     for r, row in enumerate(rows):
         cols = st.columns(cols_count)
         for c, letter in enumerate(row):
@@ -120,27 +81,21 @@ def letter_grid(items, lang, key_prefix, number_words=False):
                 unsafe_allow_html=True
             )
             if cols[c].button(letter, use_container_width=True, key=f"{key_prefix}{r}{c}"):
-                # Convert number to word if needed
                 if number_words:
                     spoken = num2words(int(letter))
                 else:
                     spoken = letter
-                st.session_state.letter_queue.append(spoken)
-                play_queued_letters(lang)
+                play_sound(spoken, lang)
 
 # ---------- DATA ----------
 english_letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 numbers = [str(i) for i in range(0, 21)]
 hindi_letters = [
     "अ","आ","इ","ई","उ","ऊ","ऋ","ए","ऐ","ओ","औ",
-    "क","ख","ग","घ","ङ",
-    "च","छ","ज","झ","ञ",
-    "ट","ठ","ड","ढ","ण",
-    "त","थ","द","ध","न",
-    "प","फ","ब","भ","म",
-    "य","र","ल","व",
-    "श","ष","स","ह",
-    "क्ष","त्र","ज्ञ"
+    "क","ख","ग","घ","ङ","च","छ","ज","झ","ञ",
+    "ट","ठ","ड","ढ","ण","त","थ","द","ध","न",
+    "प","फ","ब","भ","म","य","र","ल","व",
+    "श","ष","स","ह","क्ष","त्र","ज्ञ"
 ]
 
 # ---------- TABS ----------
