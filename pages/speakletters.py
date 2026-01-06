@@ -25,28 +25,26 @@ button {
 
 st.markdown("<h1 style='text-align:center;color:#ff6f61;'>🎈 Touch the Letter 🎈</h1>", unsafe_allow_html=True)
 
-# ---------- Keep temp files in session ----------
+# ---------- Keep temp files ----------
 if "audio_files" not in st.session_state:
     st.session_state.audio_files = []
 
 def cleanup_temp_files():
-    """Delete previous temp audio files"""
     for file in st.session_state.audio_files:
         if os.path.exists(file):
             os.remove(file)
     st.session_state.audio_files = []
 
-# Call cleanup at start
 cleanup_temp_files()
 
 # ---------- PLAY SOUND ----------
 def play_sound(text, lang):
-    """Generate TTS, keep temp file, and play using st.audio"""
+    """Generate TTS, keep temp file, play using st.audio"""
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         tts.save(f.name)
         st.session_state.audio_files.append(f.name)
-        st.audio(f.name, format="audio/mp3", start_time=0.0, key=f"{text}_{random.randint(0,1000000)}")
+        st.audio(f.name, format="audio/mp3", start_time=0.0)
 
 # ---------- PLAY ALL ----------
 def play_all_sounds(items, lang, number_words=False):
