@@ -11,31 +11,33 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------------- PLAY SOUND (NO PLAYER) ----------------
+# ---------- SOUND (NO PLAYER) ----------
 def play_sound(text, lang):
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         tts.save(f.name)
-        audio_bytes = open(f.name, "rb").read()
-        encoded = base64.b64encode(audio_bytes).decode()
-
-    audio_html = f"""
-    <audio autoplay>
-        <source src="data:audio/mp3;base64,{encoded}" type="audio/mp3">
-    </audio>
-    """
-    st.markdown(audio_html, unsafe_allow_html=True)
+        audio = open(f.name, "rb").read()
+    encoded = base64.b64encode(audio).decode()
+    st.markdown(
+        f"""
+        <audio autoplay>
+            <source src="data:audio/mp3;base64,{encoded}">
+        </audio>
+        """,
+        unsafe_allow_html=True
+    )
     os.remove(f.name)
 
-# ---------------- RESPONSIVE GRID ----------------
-def grid(items, cols, lang, key_prefix):
-    columns = st.columns(cols)
-    for i, item in enumerate(items):
-        with columns[i % cols]:
-            if st.button(item, use_container_width=True, key=f"{key_prefix}{i}"):
+# ---------- GRID THAT PRESERVES ORDER ----------
+def ordered_grid(items, columns, lang, prefix):
+    rows = [items[i:i+columns] for i in range(0, len(items), columns)]
+    for r, row in enumerate(rows):
+        cols = st.columns(columns)
+        for c, item in enumerate(row):
+            if cols[c].button(item, use_container_width=True, key=f"{prefix}{r}{c}"):
                 play_sound(item, lang)
 
-# ---------------- COLUMN COUNT ----------------
+# ---------- RESPONSIVE COLUMN COUNT ----------
 width = st.session_state.get("width", 1200)
 if width < 600:
     COLS = 4
@@ -44,31 +46,32 @@ elif width < 900:
 else:
     COLS = 8
 
-# ---------------- DATA (REAL ORDER) ----------------
-english = [chr(i) for i in range(65, 91)]
+# ---------- DATA (FIXED ORDER) ----------
+english_letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-numbers = [str(i) for i in range(10)]
+numbers = list("0123456789")
 
-hindi = [
+hindi_letters = [
+    # स्वर
     "अ","आ","इ","ई","उ","ऊ","ऋ","ए","ऐ","ओ","औ",
+    # व्यंजन
     "क","ख","ग","घ","ङ",
     "च","छ","ज","झ","ञ",
     "ट","ठ","ड","ढ","ण",
     "त","थ","द","ध","न",
     "प","फ","ब","भ","म",
     "य","र","ल","व",
-    "श","ष","स","ह",
-    "क्ष","त्र","ज्ञ"
+    "श","ष","स","ह"
 ]
 
-# ---------------- TABS ----------------
+# ---------- TABS ----------
 tab1, tab2, tab3 = st.tabs(["🔤 Alphabets", "🔢 Numbers", "🪔 Hindi Letters"])
 
 with tab1:
-    grid(english, COLS, "en", "EN")
+    ordered_grid(english_letters, COLS, "en", "EN")
 
 with tab2:
-    grid(numbers, COLS, "en", "NUM")
+    ordered_grid(numbers, COLS, "en", "NUM")
 
 with tab3:
-    grid(hindi, COLS, "hi", "HI")
+    ordered_grid(hindi_letters, COLS, "hi", "HI")
