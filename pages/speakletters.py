@@ -3,49 +3,88 @@ from gtts import gTTS
 import tempfile
 import os
 
-st.set_page_config(page_title="Kids Learning App", layout="wide")
+st.set_page_config(page_title="Kids Touch & Learn", layout="wide")
 
-st.title("🎈 Learn Letters & Numbers 🎈")
-st.write("👉 Touch a letter or number to hear its sound!")
+st.markdown(
+    "<h1 style='text-align:center;color:#ff6f61;'>🎈 Touch & Learn 🎈</h1>",
+    unsafe_allow_html=True
+)
 
-# Function to play sound
+# Speak function
 def speak(text, lang):
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
         tts.save(fp.name)
-        st.audio(fp.name)
+        st.audio(fp.name, autoplay=True)
         os.remove(fp.name)
 
-# Tabs
+# ---------------- DATA ----------------
+alphabets = [
+    ("A", "Apple"), ("B", "Ball"), ("C", "Cat"), ("D", "Dog"), ("E", "Elephant"),
+    ("F", "Fish"), ("G", "Grapes"), ("H", "Hen"), ("I", "Ice Cream"), ("J", "Jug"),
+    ("K", "Kite"), ("L", "Lion"), ("M", "Mango"), ("N", "Nest"), ("O", "Orange"),
+    ("P", "Parrot"), ("Q", "Queen"), ("R", "Rabbit"), ("S", "Sun"), ("T", "Tiger"),
+    ("U", "Umbrella"), ("V", "Van"), ("W", "Watch"), ("X", "Xylophone"),
+    ("Y", "Yak"), ("Z", "Zebra")
+]
+
+numbers = [
+    ("0", "Zero"), ("1", "One"), ("2", "Two"), ("3", "Three"), ("4", "Four"),
+    ("5", "Five"), ("6", "Six"), ("7", "Seven"), ("8", "Eight"), ("9", "Nine")
+]
+
+hindi_swar = [
+    ("अ", "अनार"), ("आ", "आम"), ("इ", "इमली"), ("ई", "ईख"),
+    ("उ", "उल्लू"), ("ऊ", "ऊन"), ("ए", "एड़ी"), ("ऐ", "ऐनक"),
+    ("ओ", "ओखली"), ("औ", "औरत")
+]
+
+hindi_vyanjan = [
+    ("क", "कमल"), ("ख", "खरगोश"), ("ग", "गाय"), ("घ", "घर"),
+    ("च", "चम्मच"), ("छ", "छाता"), ("ज", "जहाज"), ("झ", "झंडा"),
+    ("ट", "टमाटर"), ("ठ", "ठेला"), ("ड", "डमरू"), ("ढ", "ढोल"),
+    ("त", "तरबूज"), ("थ", "थाली"), ("द", "दवात"), ("ध", "धनुष"),
+    ("न", "नल"), ("प", "पतंग"), ("फ", "फल"), ("ब", "बतख"),
+    ("भ", "भालू"), ("म", "मछली"), ("य", "योग"), ("र", "रथ"),
+    ("ल", "लड्डू"), ("व", "वन"), ("श", "शेर"), ("ष", "षट्कोण"),
+    ("स", "सूरज"), ("ह", "हाथी")
+]
+
+# ---------------- TABS ----------------
 tab1, tab2, tab3 = st.tabs(["🔤 Alphabets", "🔢 Numbers", "🪔 Hindi Letters"])
 
-# ---------------- ENGLISH ALPHABETS ----------------
+# ---------------- ALPHABETS ----------------
 with tab1:
-    letters = [chr(i) for i in range(65, 91)]
-    cols = st.columns(6)
-    for i, letter in enumerate(letters):
-        if cols[i % 6].button(letter, use_container_width=True):
-            speak(letter, "en")
+    cols = st.columns(5)
+    for i, (letter, word) in enumerate(alphabets):
+        with cols[i % 5]:
+            st.image(f"https://via.placeholder.com/150?text={word}", width=150)
+            if st.button(f"{letter} - {word}", key=f"A{i}"):
+                speak(f"{letter} for {word}", "en")
 
 # ---------------- NUMBERS ----------------
 with tab2:
-    numbers = [str(i) for i in range(10)]
     cols = st.columns(5)
-    for i, num in enumerate(numbers):
-        if cols[i % 5].button(num, use_container_width=True):
-            speak(num, "en")
+    for i, (num, word) in enumerate(numbers):
+        with cols[i % 5]:
+            st.image(f"https://via.placeholder.com/150?text={word}", width=150)
+            if st.button(f"{num} - {word}", key=f"N{i}"):
+                speak(f"{num}", "en")
 
-# ---------------- HINDI LETTERS ----------------
+# ---------------- HINDI ----------------
 with tab3:
-    hindi_letters = [
-        "अ","आ","इ","ई","उ","ऊ","ए","ऐ","ओ","औ",
-        "क","ख","ग","घ","च","छ","ज","झ",
-        "ट","ठ","ड","ढ","त","थ","द","ध",
-        "न","प","फ","ब","भ","म","य","र",
-        "ल","व","श","ष","स","ह"
-    ]
+    st.subheader("🔸 स्वर")
+    cols = st.columns(5)
+    for i, (letter, word) in enumerate(hindi_swar):
+        with cols[i % 5]:
+            st.image(f"https://via.placeholder.com/150?text={word}", width=150)
+            if st.button(f"{letter} - {word}", key=f"S{i}"):
+                speak(f"{letter} {word}", "hi")
 
-    cols = st.columns(6)
-    for i, letter in enumerate(hindi_letters):
-        if cols[i % 6].button(letter, use_container_width=True):
-            speak(letter, "hi")
+    st.subheader("🔸 व्यंजन")
+    cols = st.columns(5)
+    for i, (letter, word) in enumerate(hindi_vyanjan):
+        with cols[i % 5]:
+            st.image(f"https://via.placeholder.com/150?text={word}", width=150)
+            if st.button(f"{letter} - {word}", key=f"V{i}"):
+                speak(f"{letter} {word}", "hi")
