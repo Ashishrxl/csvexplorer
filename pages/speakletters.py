@@ -1,8 +1,10 @@
 import streamlit as st
 from gtts import gTTS
 import tempfile
-import random
 from num2words import num2words
+import random
+import os
+import base64
 
 st.set_page_config(page_title="Kids Touch Letters", layout="wide")
 
@@ -16,6 +18,11 @@ button {
     border-radius: 20px !important;
     color: white !important;
 }
+
+/* Hide default audio player */
+.audio-container audio {
+    display: none;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -23,15 +30,33 @@ st.markdown("<h1 style='text-align:center;color:#ff6f61;'>🎈 Touch the Letter 
 
 # ---------- PLAY SOUND ----------
 def play_sound(text, lang):
-    """Play TTS immediately using st.audio for full reliability."""
+    """Generate TTS and play, hiding the player"""
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         tts.save(f.name)
-        st.audio(f.name, format="audio/mp3")
+        audio_path = f.name
+
+    # Read audio as base64 and embed in hidden player
+    with open(audio_path, "rb") as audio_file:
+        audio_bytes = audio_file.read()
+    audio_base64 = base64.b64encode(audio_bytes).decode()
+    rand = random.randint(1, 1_000_000)
+    st.markdown(
+        f"""
+        <div class="audio-container">
+            <audio autoplay>
+                <source src="data:audio/mp3;base64,{audio_base64}?v={rand}" type="audio/mp3">
+            </audio>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Remove temp file
+    os.remove(audio_path)
 
 # ---------- PLAY ALL ----------
 def play_all_sounds(items, lang, number_words=False):
-    """Play all items continuously"""
     if number_words:
         text_items = [num2words(int(i)) for i in items]
     else:
@@ -66,7 +91,7 @@ def letter_grid(items, lang, key_prefix, number_words=False):
                 """,
                 unsafe_allow_html=True
             )
-            if cols[c].button(letter, use_container_width=True, key=f"{key_prefix}{r}{c}"):
+            if cols[c].button(letter, use_container_width=True, key=f"{key_prefix}_{r}_{c}_{random.randint(0,1_000_000)}"):
                 spoken = num2words(int(letter)) if number_words else letter
                 play_sound(spoken, lang)
 
