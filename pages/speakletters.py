@@ -3,7 +3,7 @@ from gtts import gTTS
 import tempfile
 from num2words import num2words
 import random
-import os
+import base64
 
 st.set_page_config(page_title="Kids Touch Letters", layout="wide")
 
@@ -17,34 +17,33 @@ button {
     border-radius: 20px !important;
     color: white !important;
 }
-.audio-container {
-    display: none;
-}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align:center;color:#ff6f61;'>🎈 Touch the Letter 🎈</h1>", unsafe_allow_html=True)
 
-# ---------- Keep temp files ----------
-if "audio_files" not in st.session_state:
-    st.session_state.audio_files = []
-
-def cleanup_temp_files():
-    for file in st.session_state.audio_files:
-        if os.path.exists(file):
-            os.remove(file)
-    st.session_state.audio_files = []
-
-cleanup_temp_files()
-
 # ---------- PLAY SOUND ----------
 def play_sound(text, lang):
-    """Generate TTS, keep temp file, play using st.audio"""
+    """Generate TTS and play automatically, without showing audio player"""
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         tts.save(f.name)
-        st.session_state.audio_files.append(f.name)
-        st.audio(f.name, format="audio/mp3", start_time=0.0)
+        audio_bytes = f.read()
+    
+    with open(f.name, "rb") as f:
+        audio_bytes = f.read()
+    audio_base64 = base64.b64encode(audio_bytes).decode()
+    rand = random.randint(1, 1_000_000)
+    
+    # Hidden audio element autoplay
+    st.markdown(
+        f"""
+        <audio autoplay style="display:none">
+            <source src="data:audio/mp3;base64,{audio_base64}?v={rand}" type="audio/mp3">
+        </audio>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ---------- PLAY ALL ----------
 def play_all_sounds(items, lang, number_words=False):
