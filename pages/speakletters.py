@@ -3,15 +3,19 @@ from gtts import gTTS
 import tempfile
 import base64
 import os
+import random
 
 st.set_page_config(page_title="Kids Touch Letters", layout="wide")
 
+# ---------- CSS FOR COLORFUL BUTTONS ----------
 st.markdown("""
 <style>
 button {
     font-size: 36px !important;
     font-weight: 900 !important;
     height: 90px !important;
+    border-radius: 20px !important;
+    color: white !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -21,12 +25,13 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------- PLAY SOUND (NO PLAYER) ----------
+# ---------- PLAY SOUND (HIDDEN PLAYER) ----------
 def play_sound(text, lang):
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         tts.save(f.name)
         audio = open(f.name, "rb").read()
+
     encoded = base64.b64encode(audio).decode()
     st.markdown(
         f"""
@@ -38,29 +43,49 @@ def play_sound(text, lang):
     )
     os.remove(f.name)
 
-# ---------- RESPONSIVE GRID ----------
-def ordered_grid(items, lang, prefix):
-    screen_width = st.session_state.get("width", 1200)
-    if screen_width < 600:
-        cols_count = 4
-    elif screen_width < 900:
-        cols_count = 6
+# ---------- RESPONSIVE COLUMN COUNT ----------
+def get_columns():
+    width = st.session_state.get("width", 1200)
+    if width < 500:
+        return 3      # small mobile
+    elif width < 800:
+        return 4      # large mobile / small tablet
+    elif width < 1100:
+        return 6      # tablet
     else:
-        cols_count = 8
+        return 8      # desktop
 
+# ---------- COLOR PALETTE ----------
+colors = [
+    "#ff6f61", "#f7b731", "#20bf6b", "#45aaf2",
+    "#a55eea", "#fd9644", "#2d98da", "#eb3b5a"
+]
+
+# ---------- GRID (ORDER PRESERVED) ----------
+def letter_grid(items, lang, key_prefix):
+    cols_count = get_columns()
     rows = [items[i:i+cols_count] for i in range(0, len(items), cols_count)]
 
     for r, row in enumerate(rows):
         cols = st.columns(cols_count)
-        for c, item in enumerate(row):
-            if cols[c].button(item, use_container_width=True, key=f"{prefix}{r}{c}"):
-                play_sound(item, lang)
+        for c, letter in enumerate(row):
+            color = random.choice(colors)
+            cols[c].markdown(
+                f"""
+                <style>
+                div[data-testid="stButton"] > button {{
+                    background-color: {color};
+                }}
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            if cols[c].button(letter, use_container_width=True, key=f"{key_prefix}{r}{c}"):
+                play_sound(letter, lang)
 
 # ---------- DATA (CORRECT ORDER) ----------
 english_letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
 numbers = list("0123456789")
-
 hindi_letters = [
     "अ","आ","इ","ई","उ","ऊ","ऋ","ए","ऐ","ओ","औ",
     "क","ख","ग","घ","ङ",
@@ -76,10 +101,10 @@ hindi_letters = [
 tab1, tab2, tab3 = st.tabs(["🔤 Alphabets", "🔢 Numbers", "🪔 Hindi Letters"])
 
 with tab1:
-    ordered_grid(english_letters, "en", "EN")
+    letter_grid(english_letters, "en", "EN")
 
 with tab2:
-    ordered_grid(numbers, "en", "NUM")
+    letter_grid(numbers, "en", "NUM")
 
 with tab3:
-    ordered_grid(hindi_letters, "hi", "HI")
+    letter_grid(hindi_letters, "hi", "HI")
