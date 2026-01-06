@@ -104,7 +104,7 @@ def letter_grid(items, lang, key_prefix):
 
 # ---------- DATA (CORRECT ORDER) ----------
 english_letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-numbers = list("0123456789")
+numbers = [str(i) for i in range(0, 21)]
 hindi_letters = [
     # स्वर
     "अ","आ","इ","ई","उ","ऊ","ऋ","ए","ऐ","ओ","औ",
