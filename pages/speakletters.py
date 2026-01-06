@@ -4,6 +4,7 @@ import tempfile
 import base64
 import os
 import random
+from num2words import num2words  # <-- new import
 
 st.set_page_config(page_title="Kids Touch Letters", layout="wide")
 
@@ -25,18 +26,29 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------- PLAY SOUND (HIDDEN PLAYER) ----------
-def play_sound(text, lang):
+# ---------- LETTER QUEUE ----------
+if "letter_queue" not in st.session_state:
+    st.session_state.letter_queue = []
+
+# ---------- PLAY SOUND WITH QUEUE ----------
+def play_queued_letters(lang):
+    """Play all letters in the queue sequentially."""
+    if not st.session_state.letter_queue:
+        return
+    text = " ".join(st.session_state.letter_queue)
+    st.session_state.letter_queue = []  # clear queue immediately
+
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         tts.save(f.name)
         audio = open(f.name, "rb").read()
 
     encoded = base64.b64encode(audio).decode()
+    rand = random.randint(1, 1_000_000)
     st.markdown(
         f"""
         <audio autoplay>
-            <source src="data:audio/mp3;base64,{encoded}">
+            <source src="data:audio/mp3;base64,{encoded}?v={rand}">
         </audio>
         """,
         unsafe_allow_html=True
@@ -44,18 +56,25 @@ def play_sound(text, lang):
     os.remove(f.name)
 
 # ---------- PLAY ALL SOUNDS ----------
-def play_all_sounds(items, lang):
-    text = " ".join(items)  # space gives natural pause between letters
+def play_all_sounds(items, lang, number_words=False):
+    """Play all items. If number_words=True, convert numbers to words."""
+    if number_words:
+        text_items = [num2words(int(i)) for i in items]
+    else:
+        text_items = items
+
+    text = " ".join(text_items)
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         tts.save(f.name)
         audio = open(f.name, "rb").read()
 
     encoded = base64.b64encode(audio).decode()
+    rand = random.randint(1, 1_000_000)
     st.markdown(
         f"""
         <audio autoplay>
-            <source src="data:audio/mp3;base64,{encoded}">
+            <source src="data:audio/mp3;base64,{encoded}?v={rand}">
         </audio>
         """,
         unsafe_allow_html=True
@@ -66,13 +85,13 @@ def play_all_sounds(items, lang):
 def get_columns():
     width = st.session_state.get("width", 1200)
     if width < 500:
-        return 3      # small mobile
+        return 3
     elif width < 800:
-        return 4      # large mobile / small tablet
+        return 4
     elif width < 1100:
-        return 6      # tablet
+        return 6
     else:
-        return 8      # desktop
+        return 8
 
 # ---------- COLOR PALETTE ----------
 colors = [
@@ -80,8 +99,9 @@ colors = [
     "#a55eea", "#fd9644", "#2d98da", "#eb3b5a"
 ]
 
-# ---------- GRID (ORDER PRESERVED) ----------
-def letter_grid(items, lang, key_prefix):
+# ---------- GRID ----------
+def letter_grid(items, lang, key_prefix, number_words=False):
+    """Render a grid of letters/numbers. number_words=True converts numbers to words for TTS."""
     cols_count = get_columns()
     rows = [items[i:i+cols_count] for i in range(0, len(items), cols_count)]
 
@@ -100,16 +120,19 @@ def letter_grid(items, lang, key_prefix):
                 unsafe_allow_html=True
             )
             if cols[c].button(letter, use_container_width=True, key=f"{key_prefix}{r}{c}"):
-                play_sound(letter, lang)
+                # Convert number to word if needed
+                if number_words:
+                    spoken = num2words(int(letter))
+                else:
+                    spoken = letter
+                st.session_state.letter_queue.append(spoken)
+                play_queued_letters(lang)
 
-# ---------- DATA (CORRECT ORDER) ----------
+# ---------- DATA ----------
 english_letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 numbers = [str(i) for i in range(0, 21)]
 hindi_letters = [
-    # स्वर
     "अ","आ","इ","ई","उ","ऊ","ऋ","ए","ऐ","ओ","औ",
-
-    # व्यंजन
     "क","ख","ग","घ","ङ",
     "च","छ","ज","झ","ञ",
     "ट","ठ","ड","ढ","ण",
@@ -117,8 +140,6 @@ hindi_letters = [
     "प","फ","ब","भ","म",
     "य","र","ल","व",
     "श","ष","स","ह",
-
-    # संयुक्त अक्षर
     "क्ष","त्र","ज्ञ"
 ]
 
@@ -134,8 +155,8 @@ with tab1:
 with tab2:
     st.markdown("### 🔊 Listen to All Numbers")
     if st.button("▶️ Play All Numbers", use_container_width=True):
-        play_all_sounds(numbers, "en")
-    letter_grid(numbers, "en", "NUM")
+        play_all_sounds(numbers, "en", number_words=True)
+    letter_grid(numbers, "en", "NUM", number_words=True)
 
 with tab3:
     st.markdown("### 🔊 Listen to All Hindi Letters")
