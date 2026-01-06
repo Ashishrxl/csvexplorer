@@ -6,12 +6,22 @@ import os
 
 st.set_page_config(page_title="Kids Touch Letters", layout="wide")
 
+st.markdown("""
+<style>
+button {
+    font-size: 36px !important;
+    font-weight: 900 !important;
+    height: 90px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown(
     "<h1 style='text-align:center;color:#ff6f61;'>🎈 Touch the Letter 🎈</h1>",
     unsafe_allow_html=True
 )
 
-# ---------- SOUND (NO PLAYER) ----------
+# ---------- PLAY SOUND (NO PLAYER) ----------
 def play_sound(text, lang):
     tts = gTTS(text=text, lang=lang)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
@@ -28,33 +38,31 @@ def play_sound(text, lang):
     )
     os.remove(f.name)
 
-# ---------- GRID THAT PRESERVES ORDER ----------
-def ordered_grid(items, columns, lang, prefix):
-    rows = [items[i:i+columns] for i in range(0, len(items), columns)]
+# ---------- RESPONSIVE GRID ----------
+def ordered_grid(items, lang, prefix):
+    screen_width = st.session_state.get("width", 1200)
+    if screen_width < 600:
+        cols_count = 4
+    elif screen_width < 900:
+        cols_count = 6
+    else:
+        cols_count = 8
+
+    rows = [items[i:i+cols_count] for i in range(0, len(items), cols_count)]
+
     for r, row in enumerate(rows):
-        cols = st.columns(columns)
+        cols = st.columns(cols_count)
         for c, item in enumerate(row):
             if cols[c].button(item, use_container_width=True, key=f"{prefix}{r}{c}"):
                 play_sound(item, lang)
 
-# ---------- RESPONSIVE COLUMN COUNT ----------
-width = st.session_state.get("width", 1200)
-if width < 600:
-    COLS = 4
-elif width < 900:
-    COLS = 6
-else:
-    COLS = 8
-
-# ---------- DATA (FIXED ORDER) ----------
+# ---------- DATA (CORRECT ORDER) ----------
 english_letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 numbers = list("0123456789")
 
 hindi_letters = [
-    # स्वर
     "अ","आ","इ","ई","उ","ऊ","ऋ","ए","ऐ","ओ","औ",
-    # व्यंजन
     "क","ख","ग","घ","ङ",
     "च","छ","ज","झ","ञ",
     "ट","ठ","ड","ढ","ण",
@@ -68,10 +76,10 @@ hindi_letters = [
 tab1, tab2, tab3 = st.tabs(["🔤 Alphabets", "🔢 Numbers", "🪔 Hindi Letters"])
 
 with tab1:
-    ordered_grid(english_letters, COLS, "en", "EN")
+    ordered_grid(english_letters, "en", "EN")
 
 with tab2:
-    ordered_grid(numbers, COLS, "en", "NUM")
+    ordered_grid(numbers, "en", "NUM")
 
 with tab3:
-    ordered_grid(hindi_letters, COLS, "hi", "HI")
+    ordered_grid(hindi_letters, "hi", "HI")
